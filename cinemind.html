@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CineMind — AI Movie Recommendation Engine</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+<style>
+:root{--bg:#08080f;--card:#12121e;--card-h:#1a1a2e;--accent:#d4a853;--accent2:#e8c475;--accent-dim:rgba(212,168,83,.12);--text:#f0ece4;--text2:#b8b4ac;--muted:#6b6878;--border:#1e1e2e;--success:#4ade80;--danger:#ef4444;--glass:rgba(18,18,30,.85);--radius:12px;--font-d:'Playfair Display',serif;--font-b:'DM Sans',sans-serif}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}html{scroll-behavior:smooth}
+body{font-family:var(--font-b);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:#0e0e1a}::-webkit-scrollbar-thumb{background:var(--muted);border-radius:3px}
+input,button,textarea{font-family:inherit;outline:none;border:none;background:none;color:inherit}button{cursor:pointer}
+
+.bg-orbs{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.bg-orb{position:absolute;border-radius:50%;filter:blur(120px);opacity:.13;animation:of2 20s ease-in-out infinite}
+.bg-orb:nth-child(1){width:500px;height:500px;background:var(--accent);top:-10%;left:-5%}
+.bg-orb:nth-child(2){width:400px;height:400px;background:#1a3a5c;bottom:-10%;right:-5%;animation-delay:-7s}
+.bg-orb:nth-child(3){width:300px;height:300px;background:#3c1a2e;top:50%;left:50%;animation-delay:-14s}
+@keyframes of2{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(40px,-30px) scale(1.05)}66%{transform:translate(-20px,40px) scale(.95)}}
+@keyframes fu{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fi{from{opacity:0}to{opacity:1}}
+@keyframes ms{from{opacity:0;transform:translateY(30px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes ti{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
+@keyframes to2{to{opacity:0;transform:translateX(40px)}}
+
+#authScreen{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;background:var(--bg)}
+.ac{position:relative;z-index:1;width:420px;max-width:92vw}
+.al{text-align:center;margin-bottom:32px}.al h1{font-family:var(--font-d);font-size:2.8rem;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}.al p{color:var(--muted);font-size:.85rem;margin-top:4px;letter-spacing:2px;text-transform:uppercase}
+.acard{background:var(--glass);backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:16px;padding:32px;animation:fu .5s ease}
+.atabs{display:flex;margin-bottom:24px;border-bottom:1px solid var(--border)}
+.atab{flex:1;padding:10px;text-align:center;font-weight:600;font-size:.9rem;color:var(--muted);border-bottom:2px solid transparent;transition:.3s}.atab.active{color:var(--accent);border-bottom-color:var(--accent)}.atab:hover{color:var(--text2)}
+.fg{margin-bottom:18px}.fg label{display:block;font-size:.75rem;font-weight:600;color:var(--text2);margin-bottom:5px;text-transform:uppercase;letter-spacing:1px}
+.fi{width:100%;padding:11px 15px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;font-size:.95rem;transition:.3s;color:var(--text)}.fi:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim)}.fi::placeholder{color:var(--muted)}
+.bp{width:100%;padding:12px;background:linear-gradient(135deg,var(--accent),#c49540);color:#0a0a0f;font-weight:700;font-size:.95rem;border-radius:8px;transition:.3s}.bp:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(212,168,83,.3)}
+.ae{color:var(--danger);font-size:.8rem;margin-top:6px;min-height:18px}
+.af{display:none}.af.active{display:block}
+.dbtn{width:100%;padding:11px;margin-top:10px;background:rgba(212,168,83,.1);border:1px solid rgba(212,168,83,.25);border-radius:8px;color:var(--accent);font-weight:700;font-size:.9rem;transition:.25s;display:flex;align-items:center;justify-content:center;gap:8px}.dbtn:hover{background:rgba(212,168,83,.2);transform:translateY(-1px)}
+.rlink{text-align:center;margin-top:14px;font-size:.75rem;color:var(--muted);cursor:pointer;transition:.2s}.rlink:hover{color:var(--danger)}
+#statusMsg{text-align:center;padding:8px;font-size:.78rem;color:var(--muted);min-height:20px}
+
+#mainApp{display:none;min-height:100vh;position:relative;z-index:1}#mainApp.show{display:flex}
+#sidebar{width:260px;min-height:100vh;background:var(--glass);backdrop-filter:blur(20px);border-right:1px solid var(--border);padding:24px 0;display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:100;transition:transform .3s}
+.slogo{padding:0 24px 28px;border-bottom:1px solid var(--border);margin-bottom:12px}.slogo h2{font-family:var(--font-d);font-size:1.5rem;font-weight:800;color:var(--accent)}.slogo span{font-size:.68rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase}
+.nsec{padding:8px 12px;flex:1;overflow-y:auto}.nlbl{font-size:.63rem;text-transform:uppercase;letter-spacing:2px;color:var(--muted);padding:8px 12px;margin-top:8px}
+.ni{display:flex;align-items:center;gap:12px;padding:11px 16px;border-radius:8px;color:var(--text2);font-size:.9rem;font-weight:500;transition:.25s;cursor:pointer;margin-bottom:2px}.ni i{width:20px;text-align:center;font-size:.95rem}.ni:hover{background:rgba(255,255,255,.04);color:var(--text)}.ni.active{background:var(--accent-dim);color:var(--accent);font-weight:600}.ni.active i{color:var(--accent)}
+.sfooter{padding:16px 24px;border-top:1px solid var(--border)}.suser{display:flex;align-items:center;gap:10px}.savatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#c49540);display:flex;align-items:center;justify-content:center;font-weight:700;color:#0a0a0f;font-size:.85rem}.sinfo{flex:1;overflow:hidden}.sinfo h4{font-size:.85rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.sinfo p{font-size:.7rem;color:var(--muted)}
+#mainContent{margin-left:260px;flex:1;min-height:100vh;padding:32px 40px 60px}
+
+.sh{margin-bottom:28px}.sh h1{font-family:var(--font-d);font-size:2rem;font-weight:800;margin-bottom:6px}.sh p{color:var(--muted);font-size:.95rem}
+.sr{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}.sr h2{font-family:var(--font-d);font-size:1.35rem;font-weight:700}
+
+.mg{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:20px;margin-bottom:40px}
+.mc{position:relative;border-radius:var(--radius);overflow:hidden;cursor:pointer;transition:.35s;aspect-ratio:2/3;background:var(--card)}.mc:hover{transform:translateY(-6px);box-shadow:0 16px 40px rgba(0,0,0,.5)}.mc img{width:100%;height:100%;object-fit:cover;transition:.4s}.mc:hover img{transform:scale(1.05)}
+.mco{position:absolute;inset:0;background:linear-gradient(to top,rgba(8,8,15,.95) 0%,rgba(8,8,15,.3) 50%,transparent 100%);opacity:0;transition:.35s;display:flex;flex-direction:column;justify-content:flex-end;padding:14px}.mc:hover .mco{opacity:1}
+.mct{font-weight:700;font-size:.9rem;margin-bottom:4px;line-height:1.2}.mcm{display:flex;align-items:center;gap:8px;font-size:.75rem;color:var(--text2)}.mcr{display:flex;align-items:center;gap:3px;color:var(--accent);font-weight:700}
+.mcg{position:absolute;top:10px;left:10px;display:flex;gap:4px;flex-wrap:wrap;max-width:calc(100% - 20px);opacity:0;transition:.3s}.mc:hover .mcg{opacity:1}
+.gt{font-size:.6rem;padding:3px 7px;background:rgba(212,168,83,.2);color:var(--accent);border-radius:4px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.mca{position:absolute;top:10px;right:10px;display:flex;gap:6px;opacity:0;transition:.3s}.mc:hover .mca{opacity:1}
+.cab{width:30px;height:30px;border-radius:50%;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;font-size:.75rem;transition:.2s;color:var(--text)}.cab:hover{background:var(--accent);color:#0a0a0f}.cab.fa{color:var(--danger)}
+
+.ms{display:flex;gap:16px;overflow-x:auto;padding-bottom:12px;scroll-snap-type:x mandatory;margin-bottom:36px}.ms::-webkit-scrollbar{height:4px}.ms .mc{min-width:170px;max-width:170px;scroll-snap-align:start;flex-shrink:0}
+
+#movieModal{position:fixed;inset:0;z-index:500;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);animation:fi .25s ease}#movieModal.show{display:flex}
+.moc{background:var(--card);border:1px solid var(--border);border-radius:16px;max-width:900px;width:95%;max-height:90vh;overflow-y:auto;animation:ms .35s ease}
+.mh{position:relative;height:300px;overflow:hidden;border-radius:16px 16px 0 0}.mh img{width:100%;height:100%;object-fit:cover}.mho{position:absolute;inset:0;background:linear-gradient(to top,var(--card) 0%,rgba(18,18,30,.6) 50%,rgba(18,18,30,.3) 100%)}
+.mx{position:absolute;top:16px;right:16px;width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,.5);color:var(--text);display:flex;align-items:center;justify-content:center;font-size:1rem;transition:.2s;z-index:2}.mx:hover{background:var(--danger)}
+.mb{padding:0 32px 32px;margin-top:-60px;position:relative;z-index:2}
+.mt{font-family:var(--font-d);font-size:2rem;font-weight:800;margin-bottom:12px}
+.mm{display:flex;flex-wrap:wrap;align-items:center;gap:16px;margin-bottom:20px;font-size:.9rem;color:var(--text2)}.mm .r{color:var(--accent);font-weight:700;font-size:1.1rem;display:flex;align-items:center;gap:4px}.mm .d{width:1px;height:16px;background:var(--border)}
+.mgs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}.mge{padding:6px 14px;background:var(--accent-dim);color:var(--accent);border-radius:20px;font-size:.8rem;font-weight:600}
+.md2{color:var(--text2);line-height:1.7;margin-bottom:24px;font-size:.95rem}
+.mds{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}.mdi{background:rgba(255,255,255,.03);padding:14px;border-radius:8px}.mdi .l{font-size:.7rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:4px}.mdi .v{font-weight:600;font-size:.9rem}
+.mas{display:flex;gap:12px;margin-bottom:28px;flex-wrap:wrap}
+.mab{padding:11px 24px;border-radius:8px;font-weight:600;font-size:.9rem;transition:.25s;display:flex;align-items:center;gap:8px}
+.map{background:linear-gradient(135deg,var(--accent),#c49540);color:#0a0a0f}.map:hover{box-shadow:0 6px 20px rgba(212,168,83,.3);transform:translateY(-1px)}
+.mase{background:rgba(255,255,255,.06);border:1px solid var(--border)}.mase:hover{background:rgba(255,255,255,.1)}
+
+.str{display:flex;gap:4px}.str .s{font-size:1.4rem;color:var(--border);cursor:pointer;transition:.15s}.str .s:hover,.str .s.a{color:var(--accent)}
+
+.eb{background:linear-gradient(135deg,rgba(212,168,83,.08),rgba(212,168,83,.03));border:1px solid rgba(212,168,83,.15);border-radius:10px;padding:16px 20px;margin-bottom:24px}.eb .eh{display:flex;align-items:center;gap:8px;font-size:.8rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}.eb .et{color:var(--text2);font-size:.9rem;line-height:1.6}
+
+.sc{max-width:700px;margin:0 auto 32px}.sb{position:relative}.sb input{width:100%;padding:16px 20px 16px 50px;background:var(--card);border:1px solid var(--border);border-radius:12px;font-size:1rem;transition:.3s;color:var(--text)}.sb input:focus{border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-dim)}.sb input::placeholder{color:var(--muted)}.sb>i{position:absolute;left:18px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:1.1rem}
+.shi{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.shi2{padding:7px 14px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:20px;font-size:.8rem;color:var(--text2);cursor:pointer;transition:.2s}.shi2:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-dim)}
+.sri{color:var(--muted);font-size:.85rem;margin-bottom:16px}
+
+.mog{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-bottom:32px}
+.moc2{padding:24px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;transition:.3s;text-align:center}.moc2:hover{border-color:var(--accent);transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.3)}.moc2.a{border-color:var(--accent);background:var(--accent-dim)}.moi{font-size:2.2rem;margin-bottom:10px}.moc2 h3{font-size:1rem;font-weight:700;margin-bottom:4px}.moc2 p{font-size:.78rem;color:var(--muted)}
+.mti{max-width:700px;margin:0 auto 28px}.mti textarea{width:100%;padding:16px;background:var(--card);border:1px solid var(--border);border-radius:12px;font-size:.95rem;resize:vertical;min-height:80px;transition:.3s;color:var(--text)}.mti textarea:focus{border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-dim)}.mti textarea::placeholder{color:var(--muted)}
+
+.ph{display:flex;align-items:center;gap:24px;padding:32px;background:var(--card);border:1px solid var(--border);border-radius:16px;margin-bottom:32px}
+.pa{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#c49540);display:flex;align-items:center;justify-content:center;font-family:var(--font-d);font-size:2rem;font-weight:800;color:#0a0a0f;flex-shrink:0}
+.pi2 h2{font-family:var(--font-d);font-size:1.6rem;font-weight:800;margin-bottom:4px}.pi2 p{color:var(--muted);font-size:.9rem}
+.sg{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;margin-bottom:32px}
+.sc2{padding:20px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius)}.sc2 .sv{font-family:var(--font-d);font-size:2rem;font-weight:800;color:var(--accent)}.sc2 .sl{font-size:.8rem;color:var(--muted);margin-top:2px;text-transform:uppercase;letter-spacing:1px}
+.ps{margin-bottom:28px}.ps h3{font-family:var(--font-d);font-size:1.2rem;font-weight:700;margin-bottom:14px}
+.pt{display:flex;flex-wrap:wrap;gap:8px}.pt2{padding:8px 16px;background:var(--accent-dim);color:var(--accent);border-radius:20px;font-size:.85rem;font-weight:600;display:flex;align-items:center;gap:6px}.pt2 .psc{font-size:.7rem;color:var(--text2);font-weight:400}
+
+#toastC{position:fixed;top:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px}
+.toast{padding:14px 20px;background:var(--card);border:1px solid var(--border);border-radius:10px;font-size:.88rem;animation:ti .35s ease;display:flex;align-items:center;gap:10px;min-width:280px;box-shadow:0 8px 32px rgba(0,0,0,.4)}
+.toast.suc{border-left:3px solid var(--success)}.toast.suc i{color:var(--success)}.toast.err{border-left:3px solid var(--danger)}.toast.err i{color:var(--danger)}.toast.inf{border-left:3px solid var(--accent)}.toast.inf i{color:var(--accent)}.toast.out{animation:to2 .3s ease forwards}
+.es{text-align:center;padding:60px 20px;color:var(--muted)}.es i{font-size:3rem;margin-bottom:16px;opacity:.4}.es h3{font-size:1.1rem;color:var(--text2);margin-bottom:8px}.es p{font-size:.9rem}
+.vs{animation:fu .4s ease}
+.gfb{padding:7px 14px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:20px;font-size:.8rem;color:var(--text2);transition:.2s}.gfb:hover,.gfb.a{border-color:var(--accent);color:var(--accent);background:var(--accent-dim)}
+
+@media(max-width:768px){#sidebar{transform:translateX(-100%)}#sidebar.open{transform:translateX(0)}#mainContent{margin-left:0;padding:20px 16px 40px}.mg{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}.mds{grid-template-columns:1fr}.mb{padding:0 20px 20px}.mh{height:200px}.ph{flex-direction:column;text-align:center}.mobt{display:flex!important}}
+.mobt{display:none;position:fixed;top:16px;left:16px;z-index:200;width:40px;height:40px;border-radius:10px;background:var(--glass);backdrop-filter:blur(10px);border:1px solid var(--border);align-items:center;justify-content:center;color:var(--text);font-size:1.1rem}
+</style>
+</head>
+<body>
+<div class="bg-orbs"><div class="bg-orb"></div><div class="bg-orb"></div><div class="bg-orb"></div></div>
+<div id="toastC"></div>
+
+<div id="authScreen">
+  <div class="ac">
+    <div class="al"><h1>CineMind</h1><p>AI Recommendation Engine</p></div>
+    <div class="acard">
+      <div class="atabs"><div class="atab active" data-t="login">Sign In</div><div class="atab" data-t="register">Create Account</div></div>
+      <form id="loginF" class="af active" novalidate>
+        <div class="fg"><label>Email</label><input type="email" class="fi" id="lE" placeholder="you@example.com"></div>
+        <div class="fg"><label>Password</label><input type="password" class="fi" id="lP" placeholder="Enter password"></div>
+        <div class="ae" id="lEr"></div>
+        <button type="submit" class="bp">Sign In</button>
+        <button type="button" class="dbtn" id="demoBtn"><i class="fas fa-rocket"></i> Quick Demo Login</button>
+      </form>
+      <form id="regF" class="af" novalidate>
+        <div class="fg"><label>Full Name</label><input type="text" class="fi" id="rN" placeholder="John Doe"></div>
+        <div class="fg"><label>Email</label><input type="email" class="fi" id="rE" placeholder="you@example.com"></div>
+        <div class="fg"><label>Password (min 6)</label><input type="password" class="fi" id="rP" placeholder="Min 6 characters"></div>
+        <div class="ae" id="rEr"></div>
+        <button type="submit" class="bp">Create Account</button>
+      </form>
+      <div id="statusMsg"></div>
+      <div class="rlink" id="resetBtn">Trouble? Reset all data and start fresh</div>
+    </div>
+  </div>
+</div>
+
+<button class="mobt" id="mobT"><i class="fas fa-bars"></i></button>
+
+<div id="mainApp">
+  <aside id="sidebar">
+    <div class="slogo"><h2>CineMind</h2><span>AI Engine v2.0</span></div>
+    <nav class="nsec">
+      <div class="nlbl">Main</div>
+      <div class="ni active" data-v="dashboard"><i class="fas fa-th-large"></i>Dashboard</div>
+      <div class="ni" data-v="discover"><i class="fas fa-compass"></i>Discover</div>
+      <div class="ni" data-v="search"><i class="fas fa-brain"></i>AI Search</div>
+      <div class="ni" data-v="mood"><i class="fas fa-heart-pulse"></i>Mood Picks</div>
+      <div class="ni" data-v="trending"><i class="fas fa-fire"></i>Trending</div>
+      <div class="nlbl">Library</div>
+      <div class="ni" data-v="history"><i class="fas fa-clock-rotate-left"></i>Watch History</div>
+      <div class="ni" data-v="favorites"><i class="fas fa-star"></i>Favorites</div>
+      <div class="nlbl">Account</div>
+      <div class="ni" data-v="profile"><i class="fas fa-user-gear"></i>Profile</div>
+      <div class="ni" id="logoutBtn"><i class="fas fa-right-from-bracket"></i>Logout</div>
+    </nav>
+    <div class="sfooter"><div class="suser"><div class="savatar" id="sAv">A</div><div class="sinfo"><h4 id="sNm">User</h4><p>Member</p></div></div></div>
+  </aside>
+  <main id="mainContent"></main>
+</div>
+
+<div id="movieModal"><div class="moc" id="modC"></div></div>
+
+<script>
+/* ===== SAFE STORAGE — localStorage ya in-memory fallback ===== */
+const S = {
+  _m: {},
+  get(k) { try { const v = localStorage.getItem(k); return v === null ? undefined : v; } catch { return this._m[k]; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch {} this._m[k] = v; },
+  getJSON(k) { try { const v = this.get(k); return v ? JSON.parse(v) : undefined; } catch { return this._m[k]; } },
+  setJSON(k, v) { const s = JSON.stringify(v); this.set(k, s); this._m[k] = v; },
+  del(k) { try { localStorage.removeItem(k); } catch {} delete this._m[k]; },
+  clear() { try { Object.keys(localStorage).filter(k => k.startsWith('cm_')).forEach(k => localStorage.removeItem(k)); } catch {} this._m = {}; }
+};
+
+/* ===== MOVIE DATABASE ===== */
+const MOVIES = [
+  {id:1,title:"The Dark Knight",year:2008,genres:["Action","Crime","Thriller"],cast:["Christian Bale","Heath Ledger","Aaron Eckhart"],director:"Christopher Nolan",language:"English",rating:9.0,description:"When the menace known as the Joker wreaks havoc on Gotham, Batman must accept one of the greatest psychological and physical tests of his ability to fight injustice.",poster:"https://picsum.photos/seed/darkknight/400/600.jpg",keywords:["batman","joker","gotham","villain","hero","justice","chaos","crime"],engagement:94},
+  {id:2,title:"Inception",year:2010,genres:["Sci-Fi","Action","Thriller"],cast:["Leonardo DiCaprio","Joseph Gordon-Levitt","Elliot Page"],director:"Christopher Nolan",language:"English",rating:8.8,description:"A thief who steals corporate secrets through dream-sharing technology is given the inverse task of planting an idea into the mind of a C.E.O.",poster:"https://picsum.photos/seed/inception/400/600.jpg",keywords:["dream","subconscious","heist","mind","reality","layers","implant","sleep"],engagement:92},
+  {id:3,title:"Interstellar",year:2014,genres:["Sci-Fi","Drama","Adventure"],cast:["Matthew McConaughey","Anne Hathaway","Jessica Chastain"],director:"Christopher Nolan",language:"English",rating:8.7,description:"A team of explorers travel through a wormhole in space in an attempt to ensure humanity's survival.",poster:"https://picsum.photos/seed/interstellar/400/600.jpg",keywords:["space","time","wormhole","survival","love","gravity","black hole","future"],engagement:90},
+  {id:4,title:"The Shawshank Redemption",year:1994,genres:["Drama"],cast:["Tim Robbins","Morgan Freeman"],director:"Frank Darabont",language:"English",rating:9.3,description:"Two convicts form a friendship, seeking consolation and eventual redemption through basic compassion.",poster:"https://picsum.photos/seed/shawshank/400/600.jpg",keywords:["prison","hope","friendship","redemption","freedom","patience","escape","justice"],engagement:88},
+  {id:5,title:"Pulp Fiction",year:1994,genres:["Crime","Drama"],cast:["John Travolta","Uma Thurman","Samuel L. Jackson"],director:"Quentin Tarantino",language:"English",rating:8.9,description:"The lives of two mob hitmen, a boxer, a gangster and his wife intertwine in four tales of violence and redemption.",poster:"https://picsum.photos/seed/pulpfiction/400/600.jpg",keywords:["mob","violence","nonlinear","dialogue","hitman","mystery","dark humor","revenge"],engagement:86},
+  {id:6,title:"The Matrix",year:1999,genres:["Sci-Fi","Action"],cast:["Keanu Reeves","Laurence Fishburne","Carrie-Anne Moss"],director:"The Wachowskis",language:"English",rating:8.7,description:"Computer hacker Neo discovers the shocking truth — the life he knows is the elaborate deception of an evil cyber-intelligence.",poster:"https://picsum.photos/seed/matrix/400/600.jpg",keywords:["virtual reality","simulation","chosen one","rebellion","ai","cyberpunk","kung fu","red pill"],engagement:91},
+  {id:7,title:"Parasite",year:2019,genres:["Thriller","Drama","Comedy"],cast:["Song Kang-ho","Lee Sun-kyun","Cho Yeo-jeong"],director:"Bong Joon-ho",language:"Korean",rating:8.5,description:"Greed and class discrimination threaten the symbiotic relationship between the wealthy Park family and the destitute Kim clan.",poster:"https://picsum.photos/seed/parasite/400/600.jpg",keywords:["class","wealth","poverty","deception","family","satire","inequality","twist"],engagement:89},
+  {id:8,title:"Mad Max: Fury Road",year:2015,genres:["Action","Sci-Fi"],cast:["Tom Hardy","Charlize Theron","Nicholas Hoult"],director:"George Miller",language:"English",rating:8.1,description:"In a post-apocalyptic wasteland, a woman rebels against a tyrannical ruler in search for her homeland.",poster:"https://picsum.photos/seed/madmax/400/600.jpg",keywords:["post-apocalyptic","desert","chase","survival","rebellion","fury","vehicle","dystopia"],engagement:82},
+  {id:9,title:"Blade Runner 2049",year:2017,genres:["Sci-Fi","Drama"],cast:["Ryan Gosling","Harrison Ford","Ana de Armas"],director:"Denis Villeneuve",language:"English",rating:8.0,description:"Young Blade Runner K's discovery of a long-buried secret leads him to track down former Blade Runner Rick Deckard.",poster:"https://picsum.photos/seed/bladerunner/400/600.jpg",keywords:["cyberpunk","android","identity","dystopia","neo-noir","ai","future","detective"],engagement:78},
+  {id:10,title:"Se7en",year:1995,genres:["Thriller","Crime"],cast:["Brad Pitt","Morgan Freeman","Kevin Spacey"],director:"David Fincher",language:"English",rating:8.6,description:"Two detectives hunt a serial killer who uses the seven deadly sins as his modus operandi.",poster:"https://picsum.photos/seed/se7en/400/600.jpg",keywords:["serial killer","sin","detective","dark","gritty","twist","horror","mystery"],engagement:84},
+  {id:11,title:"The Godfather",year:1972,genres:["Crime","Drama"],cast:["Marlon Brando","Al Pacino","James Caan"],director:"Francis Ford Coppola",language:"English",rating:9.2,description:"The aging patriarch of an organized crime dynasty transfers control to his reluctant youngest son.",poster:"https://picsum.photos/seed/godfather/400/600.jpg",keywords:["mafia","family","power","loyalty","crime","empire","betrayal","legacy"],engagement:87},
+  {id:12,title:"Forrest Gump",year:1994,genres:["Drama","Comedy"],cast:["Tom Hanks","Robin Wright","Gary Sinise"],director:"Robert Zemeckis",language:"English",rating:8.8,description:"Historical events unfold from the perspective of an Alabama man with an IQ of 75.",poster:"https://picsum.photos/seed/forrestgump/400/600.jpg",keywords:["journey","america","simple","destiny","love","war","running","inspirational"],engagement:85},
+  {id:13,title:"Eternal Sunshine of the Spotless Mind",year:2004,genres:["Romance","Sci-Fi","Drama"],cast:["Jim Carrey","Kate Winslet","Tom Wilkinson"],director:"Michel Gondry",language:"English",rating:8.3,description:"A couple undergoes a medical procedure to have each other erased from their memories.",poster:"https://picsum.photos/seed/eternal/400/600.jpg",keywords:["memory","love","erasure","relationship","melancholy","surreal","heartbreak","mind"],engagement:80},
+  {id:14,title:"Spirited Away",year:2001,genres:["Animation","Fantasy"],cast:["Rumi Hiiragi","Miyu Irino","Mari Natsuki"],director:"Hayao Miyazaki",language:"Japanese",rating:8.6,description:"A sullen 10-year-old girl wanders into a world ruled by gods, witches and spirits.",poster:"https://picsum.photos/seed/spirited/400/600.jpg",keywords:["spirit","adventure","coming of age","magical","japanese","gods","brave","transformation"],engagement:83},
+  {id:15,title:"The Grand Budapest Hotel",year:2014,genres:["Comedy","Drama"],cast:["Ralph Fiennes","F. Murray Abraham","Tony Revolori"],director:"Wes Anderson",language:"English",rating:8.1,description:"A writer encounters the owner of an aging high-class hotel, who tells him of his early years.",poster:"https://picsum.photos/seed/budapest/400/600.jpg",keywords:["whimsical","hotel","adventure","friendship","eccentric","visual","comedy","nostalgia"],engagement:76},
+  {id:16,title:"Get Out",year:2017,genres:["Horror","Thriller"],cast:["Daniel Kaluuya","Allison Williams","Bradley Whitford"],director:"Jordan Peele",language:"English",rating:7.7,description:"A young African-American visits his white girlfriend's parents for the weekend, where his uneasiness eventually reaches a boiling point.",poster:"https://picsum.photos/seed/getout/400/600.jpg",keywords:["racism","horror","satire","mystery","body","trap","social","twist"],engagement:81},
+  {id:17,title:"La La Land",year:2016,genres:["Romance","Musical","Drama"],cast:["Ryan Gosling","Emma Stone","John Legend"],director:"Damien Chazelle",language:"English",rating:8.0,description:"A pianist and an actress fall in love while attempting to reconcile their aspirations for the future.",poster:"https://picsum.photos/seed/lalaland/400/600.jpg",keywords:["dreams","love","music","hollywood","romance","ambition","jazz","heartbreak"],engagement:79},
+  {id:18,title:"Spider-Man: Into the Spider-Verse",year:2018,genres:["Animation","Action"],cast:["Shameik Moore","Jake Johnson","Hailee Steinfeld"],director:"Bob Persichetti",language:"English",rating:8.4,description:"Teen Miles Morales joins with spider-powered individuals from other dimensions to stop a threat for all realities.",poster:"https://picsum.photos/seed/spiderverse/400/600.jpg",keywords:["spider-man","multiverse","animation","hero","teenager","comics","adventure","identity"],engagement:86},
+  {id:19,title:"Gladiator",year:2000,genres:["Action","Drama"],cast:["Russell Crowe","Joaquin Phoenix","Connie Nielsen"],director:"Ridley Scott",language:"English",rating:8.5,description:"A former Roman General sets out to exact vengeance against the corrupt emperor who murdered his family.",poster:"https://picsum.photos/seed/gladiator/400/600.jpg",keywords:["roman","revenge","gladiator","arena","emperor","honor","battle","epic"],engagement:83},
+  {id:20,title:"Goodfellas",year:1990,genres:["Crime","Drama"],cast:["Robert De Niro","Ray Liotta","Joe Pesci"],director:"Martin Scorsese",language:"English",rating:8.7,description:"The story of Henry Hill and his life in the mob, covering his relationship with his wife and his partners.",poster:"https://picsum.photos/seed/goodfellas/400/600.jpg",keywords:["mafia","crime","rise","fall","violence","loyalty","betrayal","true story"],engagement:82},
+  {id:21,title:"Arrival",year:2016,genres:["Sci-Fi","Drama"],cast:["Amy Adams","Jeremy Renner","Forest Whitaker"],director:"Denis Villeneuve",language:"English",rating:7.9,description:"A linguist works with the military to communicate with alien lifeforms after twelve mysterious spacecraft appear around the world.",poster:"https://picsum.photos/seed/arrival/400/600.jpg",keywords:["alien","language","communication","time","memory","first contact","emotion","intelligence"],engagement:77},
+  {id:22,title:"The Shining",year:1980,genres:["Horror","Thriller"],cast:["Jack Nicholson","Shelley Duvall","Danny Lloyd"],director:"Stanley Kubrick",language:"English",rating:8.4,description:"A family heads to an isolated hotel where a sinister presence influences the father into violence.",poster:"https://picsum.photos/seed/shining/400/600.jpg",keywords:["hotel","madness","isolation","ghost","psychic","horror","axe","descent"],engagement:81},
+  {id:23,title:"No Country for Old Men",year:2007,genres:["Thriller","Crime","Drama"],cast:["Javier Bardem","Josh Brolin","Tommy Lee Jones"],director:"Coen Brothers",language:"English",rating:8.2,description:"Violence and mayhem ensue after a hunter stumbles upon a drug deal gone wrong.",poster:"https://picsum.photos/seed/nocountry/400/600.jpg",keywords:["hunter","money","chase","killer","fate","violence","tense","philosophy"],engagement:75},
+  {id:24,title:"WALL-E",year:2008,genres:["Animation","Sci-Fi"],cast:["Ben Burtt","Elissa Knight","Jeff Garlin"],director:"Andrew Stanton",language:"English",rating:8.4,description:"A small waste-collecting robot embarks on a space journey that will decide the fate of mankind.",poster:"https://picsum.photos/seed/walle/400/600.jpg",keywords:["robot","love","earth","space","environment","lonely","adventure","humanity"],engagement:80},
+  {id:25,title:"Pan's Labyrinth",year:2006,genres:["Fantasy","Drama","War"],cast:["Ivana Baquero","Sergi López","Maribel Verdú"],director:"Guillermo del Toro",language:"Spanish",rating:8.2,description:"In Falangist Spain of 1944, a young stepdaughter escapes into an eerie but captivating fantasy world.",poster:"https://picsum.photos/seed/panslabyrinth/400/600.jpg",keywords:["fantasy","war","fairy tale","dark","courage","innocence","labyrinth","spanish"],engagement:74},
+  {id:26,title:"John Wick",year:2014,genres:["Action","Thriller"],cast:["Keanu Reeves","Michael Nyqvist","Alfie Allen"],director:"Chad Stahelski",language:"English",rating:7.4,description:"An ex-hitman comes out of retirement to track down the gangsters that killed his dog.",poster:"https://picsum.photos/seed/johnwick/400/600.jpg",keywords:["assassin","revenge","dog","gun","underworld","action","fight","retirement"],engagement:85},
+  {id:27,title:"Zodiac",year:2007,genres:["Thriller","Crime"],cast:["Jake Gyllenhaal","Robert Downey Jr.","Mark Ruffalo"],director:"David Fincher",language:"English",rating:7.7,description:"A serial killer known as the Zodiac terrorizes the San Francisco Bay Area, taunting police with ciphers.",poster:"https://picsum.photos/seed/zodiac/400/600.jpg",keywords:["serial killer","investigation","obsession","mystery","cipher","true crime","san francisco","paranoia"],engagement:72},
+  {id:28,title:"Before Sunrise",year:1995,genres:["Romance","Drama"],cast:["Ethan Hawke","Julie Delpy"],director:"Richard Linklater",language:"English",rating:8.1,description:"A young man and woman meet on a train and wind up spending one evening together in Vienna.",poster:"https://picsum.photos/seed/beforesunrise/400/600.jpg",keywords:["romance","conversation","vienna","night","connection","philosophy","youth","transient"],engagement:71},
+  {id:29,title:"The Big Lebowski",year:1998,genres:["Comedy","Crime"],cast:["Jeff Bridges","John Goodman","Julianne Moore"],director:"Coen Brothers",language:"English",rating:8.1,description:"The Dude, mistaken for a millionaire, seeks restitution for his ruined rug with help from bowling buddies.",poster:"https://picsum.photos/seed/lebowski/400/600.jpg",keywords:["slacker","bowling","absurd","rug","mistaken identity","comedy","stoner","coen"],engagement:78},
+  {id:30,title:"Hereditary",year:2018,genres:["Horror","Drama"],cast:["Toni Collette","Milly Shapiro","Gabriel Byrne"],director:"Ari Aster",language:"English",rating:7.3,description:"A grieving family is haunted by tragic and disturbing occurrences after the death of their grandmother.",poster:"https://picsum.photos/seed/hereditary/400/600.jpg",keywords:["grief","family","horror","demonic","trauma","haunting","dark","disturbing"],engagement:76},
+  {id:31,title:"Prisoners",year:2013,genres:["Thriller","Crime","Drama"],cast:["Hugh Jackman","Jake Gyllenhaal","Viola Davis"],director:"Denis Villeneuve",language:"English",rating:8.1,description:"When Keller Dover's daughter goes missing, he takes matters into his own hands.",poster:"https://picsum.photos/seed/prisoners/400/600.jpg",keywords:["missing","desperation","torture","moral","detective","father","suspense","dark"],engagement:79},
+  {id:32,title:"Ratatouille",year:2007,genres:["Animation","Comedy"],cast:["Patton Oswalt","Ian Holm","Lou Romano"],director:"Brad Bird",language:"English",rating:8.1,description:"A rat who can cook makes an unusual alliance with a young kitchen worker at a famous Paris restaurant.",poster:"https://picsum.photos/seed/ratatouille/400/600.jpg",keywords:["cooking","rat","paris","dream","talent","food","animation","inspirational"],engagement:77},
+  {id:33,title:"Sicario",year:2015,genres:["Action","Crime","Thriller"],cast:["Emily Blunt","Benicio del Toro","Josh Brolin"],director:"Denis Villeneuve",language:"English",rating:7.6,description:"An idealistic FBI agent aids in the escalating war against drugs at the U.S.-Mexico border.",poster:"https://picsum.photos/seed/sicario/400/600.jpg",keywords:["cartel","border","fbi","violence","moral ambiguity","drug war","tense","dark"],engagement:73},
+  {id:34,title:"The Shape of Water",year:2017,genres:["Fantasy","Drama","Romance"],cast:["Sally Hawkins","Octavia Spencer","Michael Shannon"],director:"Guillermo del Toro",language:"English",rating:7.3,description:"A lonely janitor forms a unique relationship with an amphibious creature held in captivity.",poster:"https://picsum.photos/seed/shapeofwater/400/600.jpg",keywords:["creature","love","1960s","outcast","fantasy","romance","acceptance","water"],engagement:70},
+  {id:35,title:"Gone Girl",year:2014,genres:["Thriller","Drama","Mystery"],cast:["Ben Affleck","Rosamund Pike","Neil Patrick Harris"],director:"David Fincher",language:"English",rating:8.1,description:"With his wife's disappearance becoming a media circus, a man sees the spotlight turned on him.",poster:"https://picsum.photos/seed/gonegirl/400/600.jpg",keywords:["marriage","disappearance","media","manipulation","mystery","twist","dark","suspense"],engagement:82}
+];
+
+const ALL_GENRES = [...new Set(MOVIES.flatMap(m=>m.genres))].sort();
+const ALL_ACTORS = [...new Set(MOVIES.flatMap(m=>m.cast))].sort();
+const ALL_DIRS = [...new Set(MOVIES.map(m=>m.director))].sort();
+const ALL_LANGS = [...new Set(MOVIES.map(m=>m.language))].sort();
+function getMovie(id){return MOVIES.find(m=>m.id===id);}
+
+/* ===== ML ENGINE ===== */
+const ML = {
+  moodKW:{happy:['happy','joy','cheerful','fun','light','laugh','upbeat','bright','positive','great','wonderful'],sad:['sad','melancholy','depressed','cry','tears','emotional','heartbreak','lonely','grief','somber','down','upset'],excited:['excited','thrill','adrenaline','action','intense','fast','epic','awesome','pumped','energetic','wild','rush'],stressed:['stressed','anxious','calm','relax','peaceful','gentle','soothing','zen','quiet','serene','escape','unwind'],romantic:['romantic','love','passion','date','couple','kiss','wedding','anniversary','together','relationship','heart'],nostalgic:['nostalgic','childhood','memories','retro','classic','old','vintage','remember','past','growing up'],thoughtful:['thoughtful','philosophical','deep','meaningful','complex','intellectual','mind-bending','puzzle','cerebral'],scared:['scared','horror','fear','terrifying','creepy','dark','nightmare','spooky','chilling','disturbing','dread']},
+  moodGenres:{happy:['Comedy','Animation','Romance'],sad:['Drama','Romance'],excited:['Action','Sci-Fi','Thriller'],stressed:['Animation','Fantasy','Comedy','Drama'],romantic:['Romance','Drama'],nostalgic:['Drama','Comedy','Animation'],thoughtful:['Sci-Fi','Drama','Thriller'],scared:['Horror','Thriller','Crime']},
+  synonyms:{emotional:['drama','romance','heartbreak'],touching:['drama','romance'],'mind-bending':['sci-fi','thriller'],funny:['comedy'],scary:['horror','thriller'],'action-packed':['action'],romantic:['romance'],animated:['animation'],classic:['drama','crime'],dark:['thriller','crime','horror'],inspiring:['drama','animation'],epic:['action','adventure','sci-fi'],suspenseful:['thriller','crime'],violent:['action','crime','thriller'],heartwarming:['animation','drama','comedy'],intelligent:['sci-fi','drama'],'visually stunning':['sci-fi','fantasy','animation'],'like inception':['sci-fi','action','thriller','mind'],'like the dark knight':['action','crime','thriller'],'like pulp fiction':['crime','drama'],'like interstellar':['sci-fi','drama','space'],'feel good':['comedy','animation','romance'],'date night':['romance','comedy']},
+
+  dot(a,b){let s=0;for(let i=0;i<a.length;i++)s+=a[i]*b[i];return s;},
+  mag(v){return Math.sqrt(v.reduce((s,x)=>s+x*x,0));},
+  cos(a,b){const m=this.mag(a)*this.mag(b);return m===0?0:this.dot(a,b)/m;},
+
+  vec(m){const v=[];ALL_GENRES.forEach(g=>v.push(m.genres.includes(g)?1:0));ALL_ACTORS.forEach(a=>v.push(m.cast.includes(a)?1:0));ALL_DIRS.forEach(d=>v.push(m.director===d?1:0));ALL_LANGS.forEach(l=>v.push(m.language===l?1:0));v.push(m.rating/10);return v;},
+
+  similar(mid,n=10){const t=getMovie(mid);if(!t)return[];const tv=this.vec(t);return MOVIES.filter(m=>m.id!==mid).map(m=>({m,s:this.cos(tv,this.vec(m))})).sort((a,b)=>b.s-a.s).slice(0,n);},
+
+  collab(uid,users,n=10){
+    const cur=users.find(u=>u.id===uid);if(!cur||!cur.ratings||!Object.keys(cur.ratings).length)return[];
+    const oth=users.filter(u=>u.id!==uid&&u.ratings&&Object.keys(u.ratings).length>0);if(!oth.length)return[];
+    const ids=[...new Set([...Object.keys(cur.ratings).map(Number),...oth.flatMap(u=>Object.keys(u.ratings).map(Number))])];
+    const cv=ids.map(id=>cur.ratings[id]||0);
+    const sims=oth.map(u=>({u,s:this.cos(cv,ids.map(id=>u.ratings[id]||0))})).filter(x=>x.s>0.1).sort((a,b)=>b.s-a.s).slice(0,5);
+    const sc={};
+    sims.forEach(({u,s})=>Object.entries(u.ratings).forEach(([mid,r])=>{const i=Number(mid);if(!cur.ratings[i])sc[i]=(sc[i]||0)+s*r;}));
+    return Object.entries(sc).map(([id,s])=>({m:getMovie(Number(id)),s})).filter(x=>x.m).sort((a,b)=>b.s-a.s).slice(0,n);
+  },
+
+  hybrid(uid,users,n=15){
+    const user=users.find(u=>u.id===uid);const cb=this.collab(uid,users,n*2);
+    const hasR=user&&user.ratings&&Object.keys(user.ratings).length>0;
+    let cs={};
+    if(hasR){Object.entries(user.ratings).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([id])=>Number(id)).forEach(mid=>{this.similar(mid,n*2).forEach(({m,s})=>{if(!user.ratings[m.id])cs[m.id]=Math.max(cs[m.id]||0,s);});});}
+    const a=hasR&&cb.length>2?0.4:0.8;const mg={};
+    cb.forEach(({m,s})=>{mg[m.id]={m,s:a*(cs[m.id]||0)+(1-a)*s};});
+    Object.entries(cs).forEach(([id,s])=>{if(!mg[id])mg[id]={m:getMovie(Number(id)),s:a*s};});
+    if(Object.keys(mg).length<3&&user&&user.prefs){const pg=Object.entries(user.prefs.genres||{}).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([g])=>g);MOVIES.forEach(m=>{if(!mg[m.id]&&(!user.ratings||!user.ratings[m.id])){const g=m.genres.filter(g=>pg.includes(g)).length/Math.max(pg.length,1);if(g>0)mg[m.id]={m,s:g*0.5+m.rating/20};}});}
+    return Object.values(mg).sort((a,b)=>b.s-a.s).slice(0,n);
+  },
+
+  tokenize(t){const sw=new Set(['a','an','the','is','are','was','were','be','been','have','has','had','do','does','did','will','would','could','should','to','of','in','for','on','with','at','by','from','as','into','through','during','before','after','above','below','between','out','off','over','under','again','then','once','here','there','when','where','why','how','all','both','each','few','more','most','other','some','such','no','nor','not','only','own','same','so','than','too','very','just','because','but','and','or','if','while','about','up','it','its','i','me','my','we','our','you','your','he','him','his','she','her','they','them','their','what','which','who','this','that','these','those','am','like','movies','movie','films','film','show','recommend','best','good','great','really','something','want','looking','give','suggestions']);return t.replace(/[^a-z0-9\s-]/g,'').split(/\s+/).filter(w=>w.length>1&&!sw.has(w));},
+  expand(tok){const e=[...tok];const p=tok.join(' ');Object.entries(this.synonyms).forEach(([k,v])=>{if(p.includes(k))v.forEach(s=>e.push(s.toLowerCase()));});return[...new Set(e)];},
+
+  search(q,n=15){
+    const ql=q.toLowerCase().trim();const tok=this.tokenize(ql);const exp=this.expand(tok);
+    return MOVIES.map(m=>{
+      let s=0;const tw=m.title.toLowerCase().split(/\s+/);const dw=m.director.toLowerCase().split(/\s+/);const cw=m.cast.flatMap(c=>c.toLowerCase().split(/\s+/));
+      if(m.title.toLowerCase().includes(ql))s+=5;tw.forEach(w=>{if(exp.includes(w))s+=3;});dw.forEach(w=>{if(exp.includes(w))s+=2.5;});cw.forEach(w=>{if(exp.includes(w))s+=2;});
+      m.genres.forEach(g=>{if(exp.includes(g.toLowerCase()))s+=3;});m.keywords.forEach(k=>{if(exp.includes(k))s+=2;if(tok.includes(k))s+=1.5;});
+      tok.forEach(t=>{m.keywords.forEach(k=>{if(k.includes(t)||t.includes(k))s+=0.5;});tw.forEach(w=>{if(w.includes(t)||t.includes(w))s+=0.8;});});
+      s+=m.rating/10;return{m,s};
+    }).filter(x=>x.s>1).sort((a,b)=>b.s-a.s).slice(0,n);
+  },
+
+  detectMood(t){const tl=t.toLowerCase();let bm='thoughtful',bs=0;Object.entries(this.moodKW).forEach(([m,kws])=>{let s=0;kws.forEach(k=>{if(tl.includes(k))s+=2;tl.split(/\s+/).forEach(w=>{if(w.includes(k)||k.includes(w))s+=1;});});if(s>bs){bs=s;bm=m;}});return bm;},
+
+  moodRec(mood,n=10){const tg=this.moodGenres[mood]||['Drama'];return MOVIES.map(m=>({m,s:m.genres.filter(g=>tg.includes(g)).length/tg.length*0.7+m.rating/10*0.3})).filter(x=>x.s>0.2).sort((a,b)=>b.s-a.s).slice(0,n);},
+
+  trending(n=10){return MOVIES.map(m=>({m,s:m.engagement/100*0.4+m.rating/10*0.25+Math.max(0,(m.year-2000)/24)*0.2+m.engagement/100*(0.8+Math.random()*0.4)*0.15})).sort((a,b)=>b.s-a.s).slice(0,n);},
+
+  explain(mid,uid,users){
+    const m=getMovie(mid),u=users.find(x=>x.id===uid);if(!m||!u)return'Recommended based on popularity and ratings.';
+    const r=[],p=u.prefs||{genres:{},actors:{},directors:{},languages:{}};
+    const mg=m.genres.filter(g=>(p.genres[g]||0)>0);if(mg.length){const t=mg.sort((a,b)=>(p.genres[b]||0)-(p.genres[a]||0))[0];r.push('you frequently watch '+t.toLowerCase()+' movies');}
+    if((p.directors[m.director]||0)>0)r.push('you enjoy films by '+m.director);
+    const ma=m.cast.filter(a=>(p.actors[a]||0)>0);if(ma.length)r.push('you like '+ma[0]+"'s performances");
+    const sim=this.similar(mid,5).filter(x=>u.ratings&&u.ratings[x.m.id]>=4);if(sim.length)r.push('you rated "'+sim[0].m.title+'" highly');
+    if((p.languages[m.language]||0)>1)r.push('you prefer '+m.language+'-language films');
+    if(!r.length&&m.rating>=8)r.push('it has an outstanding '+m.rating+'/10 rating');
+    if(!r.length)r.push('it matches trending patterns among similar viewers');
+    return'Recommended because '+r.join(', ')+'.' ;
+  }
+};
+
+/* ===== AUTH ===== */
+const AUTH = {
+  getUsers(){return S.getJSON('cm_users')||[];},
+  saveUsers(u){S.setJSON('cm_users',u);},
+  getSession(){return S.get('cm_session');},
+  setSession(id){S.set('cm_session',id);},
+  clearSession(){S.del('cm_session');},
+  getCurrent(){const id=this.getSession();if(!id)return null;return this.getUsers().find(u=>u.id===id)||null;},
+  updateUser(u){const us=this.getUsers();const i=us.findIndex(x=>x.id===u.id);if(i>=0){us[i]=u;this.saveUsers(us);}},
+  register(name,email,pass){
+    const us=this.getUsers();
+    if(us.find(u=>u.email===email.toLowerCase()))return{ok:false,err:'Email already exists.'};
+    if(!name||name.trim().length<2)return{ok:false,err:'Name too short.'};
+    if(!pass||pass.length<6)return{ok:false,err:'Password must be 6+ chars.'};
+    const id='u_'+Date.now()+'_'+Math.random().toString(36).slice(2,6);
+    const user={id,name:name.trim(),email:email.toLowerCase(),pass,ratings:{},favorites:[],watchHistory:[],prefs:{genres:{},actors:{},directors:{},languages:{}},createdAt:new Date().toISOString()};
+    us.push(user);this.saveUsers(us);return{ok:true,user};
+  },
+  login(email,pass){
+    const u=this.getUsers().find(u=>u.email===email.toLowerCase()&&u.pass===pass);
+    return u?{ok:true,user:u}:{ok:false,err:'Invalid email or password.'};
+  },
+  /* Force login — creates user if not exists, bypasses all validation */
+  forceLogin(email,name,pass){
+    let u=this.getUsers().find(x=>x.email===email);
+    if(!u){const r=this.register(name,email,pass);u=r.user;}
+    this.setSession(u.id);return u;
+  },
+  resetAll(){S.clear();}
+};
+
+/* ===== BEHAVIOR ===== */
+const BH = {
+  trackClick(uid,mid){try{const u=AUTH.getCurrent();if(u){const b=S.getJSON('cm_bh_'+uid)||{};b.cl=b.cl||[];if(!b.cl.includes(mid))b.cl.push(mid);S.setJSON('cm_bh_'+uid,b);}}catch{}},
+  trackWatch(uid,mid){
+    try{const u=AUTH.getCurrent();if(u){u.watchHistory=u.watchHistory||[];if(!u.watchHistory.includes(mid))u.watchHistory.unshift(mid);AUTH.updateUser(u);this._upPrefs(uid,mid,'watch');}}catch{}
+  },
+  trackSkip(uid,mid){try{this._upPrefs(uid,mid,'skip');}catch{}},
+  trackRating(uid,mid,r){
+    try{const u=AUTH.getCurrent();if(u){u.ratings=u.ratings||{};u.ratings[mid]=r;AUTH.updateUser(u);this._upPrefs(uid,mid,'rate',r);}}catch{}
+  },
+  toggleFav(uid,mid){
+    const u=AUTH.getCurrent();if(!u)return false;u.favorites=u.favorites||[];
+    const i=u.favorites.indexOf(mid);if(i>=0)u.favorites.splice(i,1);else u.favorites.push(mid);
+    AUTH.updateUser(u);return i<0;
+  },
+  isFav(uid,mid){return(AUTH.getCurrent()?.favorites||[]).includes(mid);},
+  _upPrefs(uid,mid,action,rating){
+    const u=AUTH.getCurrent();if(!u)return;const m=getMovie(mid);if(!m)return;
+    u.prefs=u.prefs||{genres:{},actors:{},directors:{},languages:{}};
+    const p=u.prefs;const w=action==='rate'?rating/5:action==='watch'?1:action==='skip'?-0.3:0.2;
+    m.genres.forEach(g=>{p.genres[g]=(p.genres[g]||0)+w;});
+    m.cast.forEach(a=>{p.actors[a]=(p.actors[a]||0)+w*0.7;});
+    p.directors[m.director]=(p.directors[m.director]||0)+w*0.8;
+    p.languages[m.language]=(p.languages[m.language]||0)+w*0.3;
+    AUTH.updateUser(u);
+  }
+};
+
+/* ===== SEED ===== */
+function seedUsers(){
+  const seeds=[
+    {name:"Alex Chen",email:"alex@demo.com",pass:"demo123",ratings:{"1":5,"2":5,"3":5,"6":4,"9":4,"21":4,"18":3},favorites:[1,2,3],watchHistory:[1,2,3,6,9],prefs:{genres:{"Sci-Fi":4,"Action":3,"Thriller":2,"Drama":2},actors:{"Leonardo DiCaprio":3,"Keanu Reeves":2},directors:{"Christopher Nolan":4,"Denis Villeneuve":2},languages:{"English":3}}},
+    {name:"Maria Santos",email:"maria@demo.com",pass:"demo123",ratings:{"4":5,"11":5,"5":4,"20":4,"10":4},favorites:[4,11],watchHistory:[4,11,5,20],prefs:{genres:{"Crime":4,"Drama":4,"Thriller":2},actors:{"Al Pacino":3,"Morgan Freeman":2},directors:{"Martin Scorsese":3,"Francis Ford Coppola":3},languages:{"English":3}}},
+    {name:"Yuki Tanaka",email:"yuki@demo.com",pass:"demo123",ratings:{"14":5,"24":5,"18":4,"32":4,"15":4,"7":4},favorites:[14,24],watchHistory:[14,24,18,32],prefs:{genres:{"Animation":5,"Fantasy":3,"Comedy":2},directors:{"Hayao Miyazaki":4,"Wes Anderson":2},languages:{"Japanese":2,"English":3}}},
+    {name:"Sarah Miller",email:"sarah@demo.com",pass:"demo123",ratings:{"13":5,"28":5,"17":5,"34":4,"4":4},favorites:[13,28],watchHistory:[13,28,17,34],prefs:{genres:{"Romance":5,"Drama":3},actors:{"Emma Stone":3,"Ryan Gosling":2},directors:{"Richard Linklater":3,"Damien Chazelle":2},languages:{"English":3}}},
+    {name:"James Wilson",email:"james@demo.com",pass:"demo123",ratings:{"22":5,"16":5,"30":4,"10":5,"31":4,"35":4},favorites:[22,16],watchHistory:[22,16,30,10,31],prefs:{genres:{"Horror":4,"Thriller":4,"Crime":3},actors:{"Jack Nicholson":3,"Jake Gyllenhaal":2},directors:{"Stanley Kubrick":4,"David Fincher":3},languages:{"English":3}}}
+  ];
+  const us=AUTH.getUsers();
+  seeds.forEach(sd=>{
+    let ex=us.find(u=>u.email===sd.email);
+    if(ex){Object.assign(ex,sd,{id:ex.id,createdAt:ex.createdAt});}
+    else{ex=Object.assign({id:'seed_'+sd.email.split('@')[0]+'_'+Math.random().toString(36).slice(2,5),createdAt:new Date().toISOString()},sd);us.push(ex);}
+  });
+  AUTH.saveUsers(us);
+}
+
+/* ===== TOAST ===== */
+function toast(msg,type='inf'){
+  const ic={suc:'fa-check-circle',err:'fa-exclamation-circle',inf:'fa-info-circle'};
+  const el=document.createElement('div');el.className='toast '+type;
+  el.innerHTML=`<i class="fas ${ic[type]}"></i><span>${msg}</span>`;
+  document.getElementById('toastC').appendChild(el);
+  setTimeout(()=>{el.classList.add('out');setTimeout(()=>el.remove(),300);},3000);
+}
+
+/* ===== UI ===== */
+const UI = {
+  view:'dashboard',
+  go(v){this.view=v;document.querySelectorAll('.ni[data-v]').forEach(n=>n.classList.toggle('active',n.dataset.v===v));this.render();document.getElementById('sidebar').classList.remove('open');window.scrollTo(0,0);},
+
+  render(){
+    const c=document.getElementById('mainContent');
+    const fn={dashboard:'rDash',discover:'rDisc',search:'rSrch',mood:'rMood',trending:'rTrend',history:'rHist',favorites:'rFavs',profile:'rProf'};
+    (this[fn[this.view]]||this.rDash).call(this,c);
+  },
+
+  card(m,exp=false){
+    const u=AUTH.getCurrent();const f=u?BH.isFav(u.id,m.id):false;
+    const ex=exp&&u?`<div class="eb"><div class="eh"><i class="fas fa-wand-magic-sparkles"></i> Why this pick?</div><div class="et">${ML.explain(m.id,u.id,AUTH.getUsers())}</div></div>`:'';
+    return `${ex}<div class="mc" data-mid="${m.id}"><img src="${m.poster}" alt="${m.title}" loading="lazy"><div class="mcg">${m.genres.slice(0,2).map(g=>`<span class="gt">${g}</span>`).join('')}</div><div class="mca"><button class="cab ${f?'fa':''}" data-fav="${m.id}"><i class="fas fa-heart"></i></button></div><div class="mco"><div class="mct">${m.title}</div><div class="mcm"><span class="mcr"><i class="fas fa-star"></i> ${m.rating}</span><span>${m.year}</span><span>${m.genres[0]}</span></div></div></div>`;
+  },
+  scroll(ms,title,exp=false){if(!ms.length)return'';return`<div class="sr"><h2>${title}</h2></div><div class="ms">${ms.map(m=>this.card(m,exp)).join('')}</div>`;},
+  grid(ms,title,exp=false){if(!ms.length)return'<div class="es"><i class="fas fa-film"></i><h3>No movies found</h3></div>';return(title?`<div class="sr"><h2>${title}</h2></div>`:'')+`<div class="mg">${ms.map(m=>this.card(m,exp)).join('')}</div>`;},
+  bind(c){if(!c)return;c.querySelectorAll('.mc').forEach(el=>el.addEventListener('click',e=>{if(!e.target.closest('.cab'))this.openModal(+el.dataset.mid);}));c.querySelectorAll('.cab[data-fav]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();const u=AUTH.getCurrent();if(!u)return;const a=BH.toggleFav(u.id,+b.dataset.fav);b.classList.toggle('fa',a);toast(a?'Added to favorites':'Removed','inf');}));},
+
+  rDash(c){
+    const u=AUTH.getCurrent();if(!u)return;const us=AUTH.getUsers();
+    const recs=ML.hybrid(u.id,us,12);const trend=ML.trending(8);
+    const recent=(u.watchHistory||[]).slice(0,8).map(getMovie).filter(Boolean);
+    const top=[...MOVIES].sort((a,b)=>b.rating-a.rating).slice(0,8);
+    c.innerHTML=`<div class="vs"><div class="sh"><h1>Welcome back, ${u.name.split(' ')[0]}</h1><p>Your personalized recommendations — hybrid collaborative + content filtering.</p></div>${this.scroll(recs,'Personalized For You',true)}${this.scroll(trend,'Trending Now')}${recent.length?this.scroll(recent,'Recently Watched'):''}${this.scroll(top,'Highest Rated')}</div>`;
+    this.bind(c);
+  },
+
+  rDisc(c){
+    c.innerHTML=`<div class="vs"><div class="sh"><h1>Discover</h1><p>Explore by genre.</p></div><div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:28px">${ALL_GENRES.map(g=>`<button class="gfb active" data-g="${g}">${g}</button>`).join('')}</div><div id="dGrid">${this.grid(MOVIES,'')}</div></div>`;
+    this.bind(c);
+    c.querySelectorAll('.gfb').forEach(b=>b.addEventListener('click',()=>{c.querySelectorAll('.gfb').forEach(x=>x.classList.remove('a'));b.classList.add('a');const g=b.dataset.g;const grid=document.getElementById('dGrid');grid.innerHTML=this.grid(g?MOVIES.filter(m=>m.genres.includes(g)):MOVIES,'');this.bind(grid);}));
+  },
+
+  rSrch(c){
+    c.innerHTML=`<div class="vs"><div class="sh"><h1>AI Search</h1><p>Search naturally — "emotional sci-fi" or "films like Inception".</p></div><div class="sc"><div class="sb"><i class="fas fa-brain"></i><input type="text" id="sInp" placeholder="Describe what you want to watch..." autocomplete="off"></div><div class="shi">${[['Recommend movies like Inception','Like Inception'],['Best emotional sci-fi movies','Emotional sci-fi'],['Dark thriller with twists','Dark thrillers'],['Christopher Nolan movies','Nolan films'],['Feel good animated movies','Feel-good animation'],['Intense crime drama','Crime drama'],['Romantic and philosophical','Romantic philosophy'],['Horror that messes with your mind','Mind horror']].map(([q,l])=>`<span class="shi2" data-q="${q}">${l}</span>`).join('')}</div></div><div id="sRes"></div></div>`;
+    const inp=document.getElementById('sInp');let db;
+    inp.addEventListener('input',()=>{clearTimeout(db);db=setTimeout(()=>{const q=inp.value.trim();const rd=document.getElementById('sRes');if(!q){rd.innerHTML='';return;}const r=ML.search(q,15);rd.innerHTML=`<div class="sri">Found ${r.length} results for "${q}"</div>`+this.grid(r.map(x=>x.m),'');this.bind(rd);},300);});
+    c.querySelectorAll('.shi2').forEach(h=>h.addEventListener('click',()=>{inp.value=h.dataset.q;inp.dispatchEvent(new Event('input'));}));
+  },
+
+  rMood(c){
+    const moods=[{k:'happy',i:'<i class="fas fa-sun" style="color:#fbbf24"></i>',l:'Happy',d:'Uplifting & fun'},{k:'sad',i:'<i class="fas fa-cloud-rain" style="color:#60a5fa"></i>',l:'Sad',d:'Emotional & deep'},{k:'excited',i:'<i class="fas fa-bolt" style="color:#f97316"></i>',l:'Excited',d:'Thrilling & intense'},{k:'stressed',i:'<i class="fas fa-leaf" style="color:#4ade80"></i>',l:'Stressed',d:'Calm & relaxing'},{k:'romantic',i:'<i class="fas fa-heart" style="color:#f472b6"></i>',l:'Romantic',d:'Love stories'},{k:'nostalgic',i:'<i class="fas fa-camera-retro" style="color:#a78bfa"></i>',l:'Nostalgic',d:'Classic & familiar'},{k:'thoughtful',i:'<i class="fas fa-lightbulb" style="color:#38bdf8"></i>',l:'Thoughtful',d:'Mind-expanding'},{k:'scared',i:'<i class="fas fa-ghost" style="color:#94a3b8"></i>',l:'Scared',d:'Horror & chills'}];
+    c.innerHTML=`<div class="vs"><div class="sh"><h1>Mood Picks</h1><p>Tell us how you feel.</p></div><div class="mog" id="mGrid">${moods.map(m=>`<div class="moc2" data-mood="${m.k}"><div class="moi">${m.i}</div><h3>${m.l}</h3><p>${m.d}</p></div>`).join('')}</div><div class="mti"><textarea id="mTxt" placeholder="Or describe your mood... e.g. 'I feel down and want something emotional'"></textarea></div><div id="mRes"></div></div>`;
+    c.querySelectorAll('.moc2').forEach(el=>el.addEventListener('click',()=>{c.querySelectorAll('.moc2').forEach(x=>x.classList.remove('a'));el.classList.add('a');document.getElementById('mTxt').value='';const r=ML.moodRec(el.dataset.mood,10);const l=el.dataset.mood.charAt(0).toUpperCase()+el.dataset.mood.slice(1);document.getElementById('mRes').innerHTML=this.grid(r.map(x=>x.m),l+' Vibes');this.bind(document.getElementById('mRes'));}));
+    let md;document.getElementById('mTxt').addEventListener('input',e=>{clearTimeout(md);md=setTimeout(()=>{c.querySelectorAll('.moc2').forEach(x=>x.classList.remove('a'));if(e.target.value.trim().length>3){const d=ML.detectMood(e.target.value);const r=ML.moodRec(d,10);const l=d.charAt(0).toUpperCase()+d.slice(1);document.getElementById('mRes').innerHTML=`<p style="color:var(--muted);margin-bottom:16px;font-size:.9rem"><i class="fas fa-wand-magic-sparkles" style="color:var(--accent)"></i> Detected: <strong style="color:var(--accent)">${l}</strong></p>`+this.grid(r.map(x=>x.m),l+' Vibes');this.bind(document.getElementById('mRes'));}else document.getElementById('mRes').innerHTML='';},400);});
+  },
+
+  rTrend(c){
+    const t=ML.trending(15);
+    c.innerHTML=`<div class="vs"><div class="sh"><h1>Trending Predictions</h1><p>ML-predicted momentum based on engagement, ratings, recency.</p></div>${t.map((x,i)=>{const m=x.m;const bw=(x.s*100).toFixed(0);return`<div style="display:flex;align-items:center;gap:16px;padding:14px 0;border-bottom:1px solid var(--border);cursor:pointer" class="tr" data-mid="${m.id}"><span style="font-family:var(--font-d);font-size:1.5rem;font-weight:800;color:${i<3?'var(--accent)':'var(--muted)'};width:36px;text-align:center">${i+1}</span><img src="${m.poster}" style="width:44px;height:66px;object-fit:cover;border-radius:6px"><div style="flex:1;min-width:0"><div style="font-weight:700;font-size:.95rem;margin-bottom:3px">${m.title} <span style="color:var(--muted);font-weight:400">(${m.year})</span></div><div style="font-size:.78rem;color:var(--muted);margin-bottom:6px">${m.genres.join(', ')} · <i class="fas fa-star" style="color:var(--accent);font-size:.7rem"></i> ${m.rating}</div><div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden"><div style="height:100%;width:${bw}%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:2px"></div></div></div><div style="text-align:right"><div style="font-weight:700;color:var(--accent);font-size:1.1rem">${bw}%</div><div style="font-size:.7rem;color:var(--muted)">trend</div></div></div>`;}).join('')}</div>`;
+    c.querySelectorAll('.tr').forEach(r=>r.addEventListener('click',()=>this.openModal(+r.dataset.mid)));
+  },
+
+  rHist(c){const u=AUTH.getCurrent();const h=(u.watchHistory||[]).map(getMovie).filter(Boolean);c.innerHTML=`<div class="vs"><div class="sh"><h1>Watch History</h1></div>${h.length?this.grid(h,''):'<div class="es"><i class="fas fa-clock-rotate-left"></i><h3>No history yet</h3></div>'}</div>`;this.bind(c);},
+  rFavs(c){const u=AUTH.getCurrent();const f=(u.favorites||[]).map(getMovie).filter(Boolean);c.innerHTML=`<div class="vs"><div class="sh"><h1>Favorites</h1></div>${f.length?this.grid(f,''):'<div class="es"><i class="fas fa-star"></i><h3>No favorites yet</h3></div>'}</div>`;this.bind(c);},
+
+  rProf(c){
+    const u=AUTH.getCurrent();const p=u.prefs||{genres:{},actors:{},directors:{},languages:{}};
+    const rc=Object.keys(u.ratings||{}).length,wc=(u.watchHistory||[]).length,fc=(u.favorites||[]).length;
+    c.innerHTML=`<div class="vs"><div class="ph"><div class="pa">${u.name.charAt(0).toUpperCase()}</div><div class="pi2"><h2>${u.name}</h2><p>${u.email}</p></div></div><div class="sg"><div class="sc2"><div class="sv">${wc}</div><div class="sl">Watched</div></div><div class="sc2"><div class="sv">${rc}</div><div class="sl">Ratings</div></div><div class="sc2"><div class="sv">${fc}</div><div class="sl">Favorites</div></div></div><div class="ps"><h3>Learned Genres</h3><div class="pt">${Object.entries(p.genres||{}).sort((a,b)=>b[1]-a[1]).slice(0,8).map(([g,s])=>`<span class="pt2">${g} <span class="psc">${s.toFixed(1)}</span></span>`).join('')||'<span style="color:var(--muted)">Watch & rate movies to build profile.</span>'}</div></div><div class="ps"><h3>Preferred Actors</h3><div class="pt">${Object.entries(p.actors||{}).sort((a,b)=>b[1]-a[1]).slice(0,6).map(([a,s])=>`<span class="pt2">${a} <span class="psc">${s.toFixed(1)}</span></span>`).join('')||'<span style="color:var(--muted)">None yet.</span>'}</div></div><div class="ps"><h3>Favorite Directors</h3><div class="pt">${Object.entries(p.directors||{}).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([d,s])=>`<span class="pt2">${d} <span class="psc">${s.toFixed(1)}</span></span>`).join('')||'<span style="color:var(--muted)">None yet.</span>'}</div></div><div class="ps" style="margin-top:32px"><h3>Your Ratings</h3><div style="display:flex;flex-direction:column;gap:10px;margin-top:12px">${Object.entries(u.ratings||{}).sort((a,b)=>b[1]-a[1]).map(([mid,r])=>{const m=getMovie(+mid);return m?`<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--card);border:1px solid var(--border);border-radius:8px;cursor:pointer" class="rr" data-mid="${m.id}"><img src="${m.poster}" style="width:36px;height:54px;object-fit:cover;border-radius:4px"><div style="flex:1"><div style="font-weight:600;font-size:.88rem">${m.title}</div><div style="font-size:.75rem;color:var(--muted)">${m.year}</div></div><div style="color:var(--accent);font-weight:700"><i class="fas fa-star" style="font-size:.75rem"></i> ${r}/5</div></div>`:'';}).join('')||'<span style="color:var(--muted)">No ratings.</span>'}</div></div></div>`;
+    c.querySelectorAll('.rr').forEach(r=>r.addEventListener('click',()=>this.openModal(+r.dataset.mid)));
+  },
+
+  openModal(mid){
+    const u=AUTH.getCurrent();const m=getMovie(mid);if(!m)return;
+    BH.trackClick(u.id,mid);
+    const f=BH.isFav(u.id,mid);const ur=(u.ratings||{})[mid]||0;const sim=ML.similar(mid,6);
+    const exp=u?ML.explain(mid,u.id,AUTH.getUsers()):'';
+    const mod=document.getElementById('movieModal');
+    document.getElementById('modC').innerHTML=`<div class="mh"><img src="${m.poster}"><div class="mho"></div><button class="mx" id="mX"><i class="fas fa-xmark"></i></button></div><div class="mb"><div class="mt">${m.title}</div><div class="mm"><span class="r"><i class="fas fa-star"></i> ${m.rating}/10</span><span class="d"></span><span>${m.year}</span><span class="d"></span><span>${m.language}</span><span class="d"></span><span>${90+Math.floor(Math.random()*60)} min</span></div><div class="mgs">${m.genres.map(g=>`<span class="mge">${g}</span>`).join('')}</div>${exp?`<div class="eb"><div class="eh"><i class="fas fa-wand-magic-sparkles"></i> Why this pick?</div><div class="et">${exp}</div></div>`:''}<div class="md2">${m.description}</div><div class="mds"><div class="mdi"><div class="l">Director</div><div class="v">${m.director}</div></div><div class="mdi"><div class="l">Cast</div><div class="v">${m.cast.join(', ')}</div></div><div class="mdi"><div class="l">Language</div><div class="v">${m.language}</div></div><div class="mdi"><div class="l">Genres</div><div class="v">${m.genres.join(', ')}</div></div></div><div class="mas"><button class="mab map" id="wBtn"><i class="fas fa-play"></i> Mark Watched</button><button class="mab mase" id="fBtn"><i class="fas fa-heart"></i> ${f?'Unfavorite':'Favorite'}</button><button class="mab mase" id="sBtn"><i class="fas fa-forward"></i> Skip</button></div><div style="margin-bottom:28px"><div style="font-weight:600;margin-bottom:10px">Rate this movie</div><div class="str" id="stR">${[1,2,3,4,5].map(n=>`<span class="s ${n<=ur?'a':''}" data-r="${n}"><i class="fas fa-star"></i></span>`).join('')}<span style="margin-left:10px;color:var(--muted);font-size:.85rem" id="rL">${ur?ur+'/5':'Not rated'}</span></div></div><div><h3 style="font-family:var(--font-d);font-size:1.15rem;font-weight:700;margin-bottom:16px">Similar Movies</h3><div class="ms">${sim.map(s=>this.card(s.m)).join('')}</div></div></div>`;
+    mod.classList.add('show');document.body.style.overflow='hidden';
+    document.getElementById('mX').onclick=()=>this.closeModal();
+    mod.onclick=e=>{if(e.target===mod)this.closeModal();};
+    document.getElementById('wBtn').onclick=()=>{BH.trackWatch(u.id,mid);toast('Marked as watched','suc');};
+    document.getElementById('fBtn').onclick=()=>{const a=BH.toggleFav(u.id,mid);document.getElementById('fBtn').innerHTML=`<i class="fas fa-heart"></i> ${a?'Unfavorite':'Favorite'}`;toast(a?'Favorited':'Unfavorited','inf');};
+    document.getElementById('sBtn').onclick=()=>{BH.trackSkip(u.id,mid);toast('Skipped — AI learning','inf');};
+    document.querySelectorAll('#stR .s').forEach(st=>{st.onclick=()=>{const r=+st.dataset.r;BH.trackRating(u.id,mid,r);document.querySelectorAll('#stR .s').forEach((x,i)=>x.classList.toggle('a',i<r));document.getElementById('rL').textContent=r+'/5';toast(`Rated ${r}/5`,'suc');};st.onmouseenter=()=>{const r=+st.dataset.r;document.querySelectorAll('#stR .s').forEach((x,i)=>x.style.color=i<r?'var(--accent)':'var(--border)');};});
+    document.getElementById('stR').onmouseleave=()=>{document.querySelectorAll('#stR .s').forEach((x,i)=>{x.style.color='';x.classList.toggle('a',i<ur);});};
+    this.bind(document.querySelector('.ms'));
+  },
+
+  closeModal(){document.getElementById('movieModal').classList.remove('show');document.body.style.overflow='';this.render();}
+};
+
+/* ===== INIT — EVENT LISTENERS PEHLE, DATA BAAD MEIN ===== */
+document.addEventListener('DOMContentLoaded', ()=>{
+
+  /* STEP 1: Sabse pehle sab buttons ka kaam set karo — ye KABHI fail nahi hoga */
+  document.querySelectorAll('.atab').forEach(t=>t.addEventListener('click',()=>{
+    document.querySelectorAll('.atab').forEach(x=>x.classList.remove('active'));t.classList.add('active');
+    document.querySelectorAll('.af').forEach(f=>f.classList.remove('active'));
+    document.getElementById(t.dataset.t==='login'?'loginF':'regF').classList.add('active');
+    document.getElementById('lEr').textContent='';document.getElementById('rEr').textContent='';
+  }));
+
+  document.getElementById('loginF').addEventListener('submit',e=>{
+    e.preventDefault();document.getElementById('lEr').textContent='';
+    const em=document.getElementById('lE').value.trim(),pw=document.getElementById('lP').value;
+    if(!em||!pw){document.getElementById('lEr').textContent='Fill all fields.';return;}
+    try{const r=AUTH.login(em,pw);if(r.ok){AUTH.setSession(r.user.id);showApp(r.user);}else{document.getElementById('lEr').textContent=r.err;}}
+    catch(err){document.getElementById('lEr').textContent='Error. Try Reset.';console.error(err);}
+  });
+
+  document.getElementById('regF').addEventListener('submit',e=>{
+    e.preventDefault();document.getElementById('rEr').textContent='';
+    try{const r=AUTH.register(document.getElementById('rN').value.trim(),document.getElementById('rE').value.trim(),document.getElementById('rP').value);if(r.ok){AUTH.setSession(r.user.id);showApp(r.user);}else{document.getElementById('rEr').textContent=r.err;}}
+    catch(err){document.getElementById('rEr').textContent='Error. Try Reset.';console.error(err);}
+  });
+
+  /* DEMO BUTTON — completely independent, can't fail */
+  document.getElementById('demoBtn').addEventListener('click',()=>{
+    document.getElementById('lEr').textContent='';
+    try{
+      seedUsers();
+      const user=AUTH.forceLogin('alex@demo.com','Alex Chen','demo123');
+      showApp(user);
+    }catch(err){
+      console.error('Demo login error:',err);
+      /* ABSOLUTE FALLBACK — agar sab kuch fail ho jaye */
+      document.getElementById('statusMsg').innerHTML='<span style="color:var(--danger)">Error: '+err.message+'</span>';
+      try{
+        AUTH.resetAll();seedUsers();
+        const user=AUTH.forceLogin('alex@demo.com','Alex Chen','demo123');
+        showApp(user);
+      }catch(e2){
+        document.getElementById('statusMsg').innerHTML='<span style="color:var(--danger)">Still failing. Click "Reset all data" below.</span>';
+      }
+    }
+  });
+
+  document.getElementById('resetBtn').addEventListener('click',()=>{
+    AUTH.resetAll();
+    document.getElementById('lEr').textContent='';
+    document.getElementById('rEr').textContent='';
+    document.getElementById('statusMsg').innerHTML='<span style="color:var(--success)">Data cleared. Click Demo Login or register.</span>';
+    toast('All data reset','inf');
+  });
+
+  document.getElementById('logoutBtn').addEventListener('click',()=>{
+    AUTH.clearSession();document.getElementById('mainApp').classList.remove('show');
+    document.getElementById('authScreen').style.display='';
+    document.getElementById('lE').value='';document.getElementById('lP').value='';document.getElementById('lEr').textContent='';
+    toast('Signed out','inf');
+  });
+
+  document.getElementById('mobT').addEventListener('click',()=>document.getElementById('sidebar').classList.toggle('open'));
+
+  document.querySelectorAll('.ni[data-v]').forEach(i=>i.addEventListener('click',()=>UI.go(i.dataset.v)));
+
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')UI.closeModal();});
+
+  /* STEP 2: Data init — agar fail ho toh bhi buttons kaam karenge */
+  try{seedUsers();}catch(e){console.error('Seed error:',e);}
+
+  /* STEP 3: Existing session check */
+  try{
+    const ex=AUTH.getCurrent();
+    if(ex)showApp(ex);
+  }catch(e){console.error('Session check error:',e);}
+});
+
+function showApp(user){
+  document.getElementById('authScreen').style.display='none';
+  document.getElementById('mainApp').classList.add('show');
+  document.getElementById('sAv').textContent=user.name.charAt(0).toUpperCase();
+  document.getElementById('sNm').textContent=user.name;
+  UI.go('dashboard');
+}
+</script>
+</body>
+</html>
